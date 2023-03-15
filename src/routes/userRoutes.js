@@ -16,7 +16,7 @@ router.post('/user/upload', async (req, res) => {
 	const file = req.files.upload;
 
 	try {
-		const path = `/tmp/${file.name}`;
+		const path = `./tmp/${file.name}`;
 
 		await sharp(file.tempFilePath)
 			.resize(null, 500, {
