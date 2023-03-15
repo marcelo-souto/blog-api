@@ -39,9 +39,8 @@ router.post('/user/upload', async (req, res) => {
 			},
 			data: image
 		};
-		return res.status(200).json('chegou ate aqui')
-		const { data } = await axios(options);
 		
+		const { data } = await axios(options);
 
 		return res
 			.status(200)
