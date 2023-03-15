@@ -30,8 +30,6 @@ router.post('/user/upload', async (req, res) => {
 
 		const image = readFileSync(path);
 
-		return res.status(200).json(image)
-
 		const options = {
 			method: 'POST',
 			url: 'https://api.imgur.com/3/image',
@@ -43,6 +41,7 @@ router.post('/user/upload', async (req, res) => {
 		};
 
 		const { data } = await axios(options);
+		return res.status(200).json(data)
 
 		return res
 			.status(200)
