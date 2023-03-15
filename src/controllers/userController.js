@@ -9,6 +9,15 @@ const userController = {
 			return res.status(400).json({ erro: error.message });
 		}
 	},
+	getById: async (req, res) => {
+		const { userId } = req.params;
+		try {
+			const user = await User.findByPk(userId);
+			return res.status(200).json(user);
+		} catch (error) {
+			return res.status(400).json({ erro: error.message });
+		}
+	},
 	create: async (req, res) => {
 		const { name, email, password } = req.body;
 
