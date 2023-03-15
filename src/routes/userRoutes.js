@@ -27,8 +27,10 @@ router.post('/user/upload', async (req, res) => {
 			.toFile(path);
 
 		await unlink(file.tempFilePath);
-		return res.status(200).json(file)
+
 		const image = readFileSync(path);
+
+		return res.status(200).json(image)
 
 		const options = {
 			method: 'POST',
