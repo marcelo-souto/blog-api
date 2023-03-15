@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 
 server.use(express.json());
 server.use(cors());
-server.use(fileUpload({ useTempFiles: true, tempFileDir: './tmp' }));
+server.use(fileUpload({ useTempFiles: true, tempFileDir: '/tmp' }));
 
 server.get('/', (req, res) => {
 	return res.send('<h1>Rodando o servidor</h1>');
