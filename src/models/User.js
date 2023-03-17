@@ -1,5 +1,5 @@
-import sequelize from '../database/dbconfig.js';
-import { DataTypes, Deferrable } from 'sequelize';
+import sequelize from '../config/database/dbconfig.js';
+import { DataTypes } from 'sequelize';
 
 const User = sequelize.define(
 	'users',
@@ -21,10 +21,23 @@ const User = sequelize.define(
 		password: {
 			type: DataTypes.STRING,
 			allowNull: false
+		},
+		avatar: {
+			type: DataTypes.JSON,
+			defaultValue: {
+				url: null,
+				hash: null,
+				id: null
+			}
+		},
+		verifiedEmail: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false
 		}
 	},
 	{ timestamps: false }
 );
 
+// User.sync({ force: true });
 
-export default User
+export default User;

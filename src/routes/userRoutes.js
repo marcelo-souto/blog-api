@@ -13,6 +13,8 @@ const router = Router();
 router.get('/user', userController.getAll);
 router.get('/user/:userId', userController.getById);
 router.post('/user/create', userController.create);
+router.get('/user/verifyemail/:token', userController.verifyEmail)
+
 router.post('/user/upload', uploadFile, async (req, res) => {
 
 	const file = req.file
@@ -45,7 +47,7 @@ router.post('/user/upload', uploadFile, async (req, res) => {
 
 		return res
 			.status(200)
-			.json({ mensagem: 'Imagem enviada com sucesso.', link: data.data.link });
+			.json({ mensagem: 'Imagem enviada com sucesso.', info: data.data });
 	} catch (error) {
 		return res.status(400).json({ error: error.message });
 	}
