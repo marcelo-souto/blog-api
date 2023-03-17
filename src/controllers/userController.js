@@ -1,37 +1,64 @@
 import User from '../models/User.js';
 import { Op } from 'sequelize';
 import validate from '../functions/validate.js';
-import { encryptPassword } from '../functions/handlePassword.js';
+import { encryptPassword, checkPassword } from '../functions/handlePassword.js';
 import Email from '../config/email/Email.js';
 import { createToken, verifyToken } from '../functions/handleToken.js';
 import Token from '../models/Token.js';
+import sendResponse from '../config/server/sendResponse.js';
 
 const userController = {
 	getAll: async (req, res) => {
 		try {
-			const users = await User.findAll();
-			return res.status(200).json(users);
+			const users = await User.findAll({ attributes: { exclude: 'password' } });
+			return sendResponse(res, 200, null, users);
 		} catch (error) {
-			return res.status(400).json({ erro: error.message });
+			return sendResponse(res, 400, error.message);
 		}
 	},
 	getById: async (req, res) => {
 		const { userId } = req.params;
 		try {
-			const user = await User.findByPk(userId);
-			return res.status(200).json(user);
+			const user = await User.findByPk(userId, {
+				attributes: { exclude: 'password' }
+			});
+
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			return sendResponse(res, 200, null, user);
 		} catch (error) {
-			return res.status(400).json({ erro: error.message });
+			return sendResponse(res, 400, error.message);
+		}
+	},
+	auth: async (req, res) => {
+		const { email, password } = req.body;
+
+		try {
+			validate({ email, isRequired: true });
+			validate({ senha: password, isRequired: true });
+
+			const user = await User.findOne({ where: { email: `${email}` } });
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			const result = await checkPassword(password, user.password);
+			if (!result) return sendResponse(res, 401);
+
+			const token = createToken({ userId: user.userId, role: user.role });
+
+			return sendResponse(res, 200, null, { token });
+		} catch (error) {
+			return sendResponse(res, 400, error.message);
 		}
 	},
 	create: async (req, res) => {
-		const { name, email, password } = req.body;
+		const { name, email, password, role } = req.body;
 
 		try {
 			// Validar valores recebidos
 			validate({ email, type: 'email', isRequired: true });
 			validate({ nome: name, isRequired: true });
 			validate({ senha: password, type: 'password', isRequired: true });
+			validate({ role, type: 'role', isRequired: true });
 
 			// Checando se email existe no banco
 			const userAlreadyExists = await User.findOne({
@@ -39,7 +66,7 @@ const userController = {
 			});
 
 			if (userAlreadyExists)
-				return res.status(400).json({ erro: 'Usuário já cadastrado.' });
+				return sendResponse(res, 400, 'Usuário já cadastrado.');
 
 			// Criptografar senha
 			const passwordHash = await encryptPassword(password);
@@ -48,6 +75,7 @@ const userController = {
 			const user = await User.create({
 				name,
 				email,
+				role: role,
 				password: passwordHash
 			});
 
@@ -69,9 +97,98 @@ const userController = {
 
 			await verificationEmail.sendTo(user.email);
 
-			return res.status(201).json(user);
+			return sendResponse(res, 201, 'Usuário criado com sucesso.');
 		} catch (error) {
-			return res.status(400).json({ erro: error.message });
+			return sendResponse(res, 400, error.message);
+		}
+	},
+	update: async (req, res) => {
+		const { email, name, userId } = req.body;
+
+		try {
+			if (!name && !email)
+				return sendResponse(res, 400, 'Não foram enviadas informações.');
+
+			validate({ email, type: 'email' });
+			validate({ nome: name });
+
+			const user = await User.findByPk(userId);
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			if (user.email === email || user.name === name)
+				return sendResponse(
+					res,
+					400,
+					'Novas informações devem ser diferentes das anteriores.'
+				);
+
+			const emailAlreadyExists = await User.findOne({
+				where: { email: `${email}` }
+			});
+
+			if (emailAlreadyExists)
+				return sendResponse(res, 400, 'Email já cadastrado.');
+
+			await user.update({
+				name: name ? name : user.name,
+				email: email ? email : user.email
+			});
+
+			return sendResponse(res, 200, 'Informações atualizadas com sucesso.');
+		} catch (error) {
+			return sendResponse(res, 400, error.message);
+		}
+	},
+	delete: async (req, res) => {
+		const { userId } = req.body;
+
+		try {
+			const user = await User.findByPk(userId);
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			await user.destroy();
+
+			return sendResponse(res, 200, 'Usuário excluído com sucesso.');
+		} catch (error) {
+			return sendResponse(res, 400, error.message);
+		}
+	},
+	changePassword: async (req, res) => {
+		const { password, newPassword, confirmPassword, userId } = req.body;
+
+		try {
+			validate({ senha: newPassword, type: 'password', isRequired: true });
+
+			const user = await User.findByPk(userId);
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			const result = await checkPassword(password, user.password);
+			if (!result) return sendResponse(res, 401, 'Senha incorreta.');
+
+			const isTheSamePassword = await checkPassword(newPassword, user.password);
+			if (isTheSamePassword)
+				return sendResponse(
+					res,
+					400,
+					'Sua nova senha deve ser diferente da atual.'
+				);
+
+			if (newPassword !== confirmPassword)
+				return sendResponse(
+					res,
+					400,
+					'Senha e confirmação de senha devem ser iguais.'
+				);
+
+			const passwordHash = await encryptPassword(newPassword);
+
+			await user.update({
+				password: passwordHash
+			});
+
+			return sendResponse(res, 200, 'Senha atualizada com sucesso.');
+		} catch (error) {
+			return sendResponse(res, 400, error.message);
 		}
 	},
 	verifyEmail: async (req, res) => {
@@ -80,8 +197,7 @@ const userController = {
 			const { userId } = verifyToken(token);
 
 			const user = await User.findByPk(userId);
-			if (!user)
-				return res.status(404).json({ message: 'Usuário não encontrado.' });
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
 
 			const tokenExists = await Token.findOne({
 				where: {
@@ -93,16 +209,12 @@ const userController = {
 
 			if (!user.verifiedEmail) {
 				await user.update({ verifiedEmail: true });
-				return res
-					.status(200)
-					.json({ message: 'Email verificado com sucesso.' });
-
-			} else {
-				return res.status(200).json({ message: 'Email já verificado.' });
+				return sendResponse(res, 200, 'Email verificado com sucesso.');
 			}
 
+			return sendResponse(res, 400, 'Email já verificado.');
 		} catch (error) {
-			return res.status(400).json({ erro: error.message });
+			return sendResponse(res, 400, error.message);
 		}
 	}
 };

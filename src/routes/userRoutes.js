@@ -6,21 +6,37 @@ import sharp from 'sharp';
 import axios from 'axios';
 import { readFileSync } from 'fs';
 import uploadFile from '../middlewares/upload.js';
+import checkToken from '../middlewares/checkToken.js';
 dotenv.config();
 
 const router = Router();
 
+// Create
+router.post('/user/create', userController.create);
+
+// Read
 router.get('/user', userController.getAll);
 router.get('/user/:userId', userController.getById);
-router.post('/user/create', userController.create);
-router.get('/user/verifyemail/:token', userController.verifyEmail)
+
+// Update
+router.put('/user/update', checkToken, userController.update);
+
+// Delete
+router.delete('/user/delete', checkToken, userController.delete);
+
+// Verificar email
+router.get('/user/verifyemail/:token', userController.verifyEmail);
+
+// Login
+router.post('/user/auth', userController.auth);
+
+// Mudança de senha
+router.post('/user/changepassword', checkToken, userController.changePassword)
 
 router.post('/user/upload', uploadFile, async (req, res) => {
-
-	const file = req.file
+	const file = req.file;
 
 	try {
-
 		await sharp(file.path)
 			.resize(null, 500, {
 				fit: sharp.fit.cover,

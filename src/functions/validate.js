@@ -33,6 +33,10 @@ const types = {
 	bool: {
 		regex: /^true|false$/,
 		message: 'Insira um valor correto'
+	},
+	role: {
+		regex: /(admin|user)/,
+		message: 'Insira um valor válido'
 	}
 };
 
