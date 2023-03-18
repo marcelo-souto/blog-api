@@ -6,6 +6,7 @@ import Email from '../config/email/Email.js';
 import { createToken, verifyToken } from '../functions/handleToken.js';
 import Token from '../models/Token.js';
 import sendResponse from '../config/server/sendResponse.js';
+import { uploadImage } from '../functions/handleUpload.js';
 
 const userController = {
 	getAll: async (req, res) => {
@@ -106,6 +107,9 @@ const userController = {
 		const { email, name, userId } = req.body;
 
 		try {
+			let avatar;
+			if (req.file) avatar = await uploadImage(req.file);
+
 			if (!name && !email)
 				return sendResponse(res, 400, 'Não foram enviadas informações.');
 
@@ -131,7 +135,8 @@ const userController = {
 
 			await user.update({
 				name: name ? name : user.name,
-				email: email ? email : user.email
+				email: email ? email : user.email,
+				avatar: avatar ? avatar : user.avatar
 			});
 
 			return sendResponse(res, 200, 'Informações atualizadas com sucesso.');

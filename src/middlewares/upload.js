@@ -1,4 +1,5 @@
 import multer from 'multer';
+import sendResponse from '../config/server/sendResponse.js';
 
 const config = {
 	dest: '/tmp',
@@ -14,18 +15,20 @@ const config = {
 	limits: { fieldSize: 2000000 }
 };
 
-function uploadFile(req, res, next) {
-	const upload = multer(config).single('upload');
 
-	upload(req, res, function (err) {
+const upload = (req, res, next) => {
+	const multerUpload = multer(config).single('upload');
+	const userId = req.body.userId
+
+	multerUpload(req, res, (err) => {
 		if (err instanceof multer.MulterError) {
-			return res.status(400).json({ erro: err.message });
+			return sendResponse(res, 400, err.message)
 		} else if (err) {
-			return res.status(400).json({ erro: err.message });
+			return sendResponse(res, 400, err.message)
 		}
-
+		req.body.userId = userId
 		next();
 	});
 }
 
-export default uploadFile
+export default upload
