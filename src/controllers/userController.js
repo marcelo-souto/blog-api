@@ -68,7 +68,7 @@ const userController = {
 
 			const accessToken = createToken(
 				{ userId: user.userId, role: user.role },
-				'1d'
+				'1min'
 			);
 
 			return sendResponse(res, 200, null, { refreshToken, accessToken });
