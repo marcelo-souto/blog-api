@@ -110,7 +110,7 @@ const userController = {
 			let avatar;
 			if (req.file) avatar = await uploadImage(req.file);
 
-			if (!name && !email)
+			if (!name && !email && !req.file)
 				return sendResponse(res, 400, 'Não foram enviadas informações.');
 
 			validate({ email, type: 'email' });
