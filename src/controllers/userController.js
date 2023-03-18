@@ -58,10 +58,13 @@ const userController = {
 			const user = await User.findOne({ where: { email: `${email}` } });
 			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
 
+			if (!user.verifiedEmail)
+				return sendResponse(res, 400, 'Email não verificado.');
+
 			const result = await checkPassword(password, user.password);
 			if (!result) return sendResponse(res, 401);
 
-			const refreshToken = createToken({}, '7d');
+			const refreshToken = createToken({}, '7d', 'refreshToken');
 
 			await user.update({
 				refreshToken
@@ -106,7 +109,7 @@ const userController = {
 			});
 
 			// Criar token de email
-			const token = createToken({ userId: user.userId }, '1d');
+			const token = createToken({ userId: user.userId }, '1d', 'emailToken');
 
 			// Armazenar token de email
 			await Token.create({
@@ -224,7 +227,7 @@ const userController = {
 	verifyEmail: async (req, res) => {
 		const { token } = req.params;
 		try {
-			const { userId } = verifyToken(token);
+			const { userId } = verifyToken(token, 'emailToken');
 
 			const user = await User.findByPk(userId);
 			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
@@ -246,7 +249,7 @@ const userController = {
 		} catch (error) {
 			return sendResponse(res, 400, error.message);
 		}
-	}
+	},
 };
 
 export default userController;

@@ -10,8 +10,10 @@ const checkToken = async (req, res, next) => {
 	if (!token) return sendResponse(res, 401, 'Token inválido.');
 
 	try {
-		const { userId } = verifyToken(token, process.env.SECRET_KEY);
+		const { userId, role } = verifyToken(token, 'accessToken');
 		if (userId) req.body.userId = userId;
+		if(role) req.body.role = role;
+		
 		next();
     
 	} catch (error) {
