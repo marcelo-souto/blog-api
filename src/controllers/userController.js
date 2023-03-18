@@ -31,7 +31,23 @@ const userController = {
 			return sendResponse(res, 400, error.message);
 		}
 	},
-	auth: async (req, res) => {
+	logout: async (req, res) => {
+		const { userId } = req.params;
+
+		try {
+			const user = await User.findByPk(userId)
+			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+
+			await user.update({
+				refreshToken: null
+			})
+
+			return sendResponse(res, 200, 'Usuário desconectado com sucesso.');
+		} catch (error) {
+			return sendResponse(res, 400, error.message);
+		}
+	},
+	login: async (req, res) => {
 		const { email, password } = req.body;
 
 		try {
@@ -44,9 +60,18 @@ const userController = {
 			const result = await checkPassword(password, user.password);
 			if (!result) return sendResponse(res, 401);
 
-			const token = createToken({ userId: user.userId, role: user.role });
+			const refreshToken = createToken({}, '7d');
 
-			return sendResponse(res, 200, null, { token });
+			await user.update({
+				refreshToken
+			});
+
+			const accessToken = createToken(
+				{ userId: user.userId, role: user.role },
+				'1d'
+			);
+
+			return sendResponse(res, 200, null, { refreshToken, accessToken });
 		} catch (error) {
 			return sendResponse(res, 400, error.message);
 		}
@@ -81,7 +106,7 @@ const userController = {
 			});
 
 			// Criar token de email
-			const token = createToken({ userId: user.userId });
+			const token = createToken({ userId: user.userId }, '1d');
 
 			// Armazenar token de email
 			await Token.create({

@@ -13,7 +13,8 @@ router.get('/user/get/:userId', userController.getById);
 router.put('/user/update', checkToken, upload, userController.update);
 router.delete('/user/delete', checkToken, userController.delete);
 router.get('/user/verifyemail/:token', userController.verifyEmail);
-router.post('/user/auth', userController.auth);
+router.post('/user/login', userController.login);
+router.post('/user/logout/:userId', userController.logout);
 router.post('/user/changepassword', checkToken, userController.changePassword)
 
 export default router;

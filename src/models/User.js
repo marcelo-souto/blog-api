@@ -34,6 +34,9 @@ const User = sequelize.define(
 				id: null
 			}
 		},
+		refreshToken: {
+			type: DataTypes.TEXT,
+		},
 		verifiedEmail: {
 			type: DataTypes.BOOLEAN,
 			defaultValue: false
