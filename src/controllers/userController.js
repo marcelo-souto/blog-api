@@ -7,6 +7,7 @@ import { createToken, verifyToken } from '../functions/handleToken.js';
 import Token from '../models/Token.js';
 import sendResponse from '../config/server/sendResponse.js';
 import { uploadImage } from '../functions/handleUpload.js';
+import axios from 'axios';
 
 const userController = {
 	getAll: async (req, res) => {
@@ -35,12 +36,12 @@ const userController = {
 		const { userId } = req.params;
 
 		try {
-			const user = await User.findByPk(userId)
+			const user = await User.findByPk(userId);
 			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
 
 			await user.update({
 				refreshToken: null
-			})
+			});
 
 			return sendResponse(res, 200, 'Usuário desconectado com sucesso.');
 		} catch (error) {
@@ -66,10 +67,9 @@ const userController = {
 				refreshToken
 			});
 
-			const accessToken = createToken(
-				{ userId: user.userId, role: user.role },
-				'1min'
-			);
+			const {
+				data: { accessToken }
+			} = await axios.post(process.env.TOKEN_API_URL, { refreshToken });
 
 			return sendResponse(res, 200, null, { refreshToken, accessToken });
 		} catch (error) {
