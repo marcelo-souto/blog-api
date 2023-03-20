@@ -33,14 +33,21 @@ const userController = {
 		}
 	},
 	logout: async (req, res) => {
-		const { userId } = req.params;
+		const { refreshToken } = req.body;
 
 		try {
-			const user = await User.findByPk(userId);
+			const user = await User.findOne({
+				attributes: ['refreshToken', 'userId'],
+				where: { refreshToken: { [Op.substring]: refreshToken } }
+			});
+			
 			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
+			
+			const userTokens = JSON.parse(user.refreshToken);
+			const newUserTokens = userTokens.filter(token => token !== refreshToken)
 
 			await user.update({
-				refreshToken: null
+				refreshToken: JSON.stringify(newUserTokens)
 			});
 
 			return sendResponse(res, 200, 'Usuário desconectado com sucesso.');
