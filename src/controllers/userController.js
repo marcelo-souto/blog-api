@@ -66,8 +66,12 @@ const userController = {
 
 			const refreshToken = createToken({}, '7d', 'refreshToken');
 
+			const userTokens = JSON.parse(user.refreshToken);
+
+			userTokens.push(refreshToken);
+
 			await user.update({
-				refreshToken
+				refreshToken: JSON.stringify(userTokens)
 			});
 
 			const {
@@ -249,7 +253,7 @@ const userController = {
 		} catch (error) {
 			return sendResponse(res, 400, error.message);
 		}
-	},
+	}
 };
 
 export default userController;
