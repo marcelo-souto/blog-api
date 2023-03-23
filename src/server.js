@@ -6,6 +6,7 @@ dotenv.config();
 // Rotas
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js'
+import categoryRoutes from './routes/categoryRoutes.js'
 
 const server = express();
 const port = process.env.PORT || 3000;
@@ -18,7 +19,8 @@ server.get('/', (req, res) => {
 });
 
 server.use(userRoutes);
-server.use(postRoutes)
+server.use(postRoutes);
+server.use(categoryRoutes)
 
 server.listen(port, () => {
 	console.log(`Servidor rodando na porta ${port}`);
