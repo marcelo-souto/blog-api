@@ -10,7 +10,7 @@ const router = Router();
 
 router.post('/user/create', userController.create);
 router.get('/user/get', checkToken, requireRole('admin'), userController.getAll);
-router.get('/user/get/:userId', checkToken, requireRole('admin'), userController.getById);
+router.get('/user/get/me', checkToken, userController.getById);
 router.put('/user/update', checkToken, upload, userController.update);
 router.delete('/user/delete', checkToken, userController.delete);
 router.get('/user/verifyemail/:token', userController.verifyEmail);
