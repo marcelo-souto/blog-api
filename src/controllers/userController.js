@@ -8,6 +8,7 @@ import Token from "../models/Token.js";
 import sendResponse from "../config/server/sendResponse.js";
 import { uploadImage } from "../functions/handleUpload.js";
 import axios from "axios";
+import createRandomPassword from "../functions/createRandomPassword.js";
 
 const userController = {
   getAll: async (req, res) => {
@@ -244,6 +245,32 @@ const userController = {
       }
 
       return sendResponse(res, 400, "Email já verificado.");
+    } catch (error) {
+      return sendResponse(res, 400, error.message);
+    }
+  },
+  sendChangePasswordEmail: async (req, res) => {
+    const { email } = req.body;
+
+    try {
+      const user = await User.findOne({ where: { email: `${email}` } });
+      if (!user) return sendResponse(res, 404, "Usuário não encontrado.");
+
+      const randomPassword = createRandomPassword();
+      const hashedPassword = await encryptPassword(randomPassword);
+
+      await user.update({
+        password: hashedPassword,
+      });
+
+      const changePasswordEmail = new Email();
+      changePasswordEmail.createModel("changePasswordEmail", {
+        user: user.name,
+        password: randomPassword,
+      });
+      await changePasswordEmail.sendTo(user.email);
+
+      return sendResponse(res, 200, 'Email enviado com sucesso.');
     } catch (error) {
       return sendResponse(res, 400, error.message);
     }
