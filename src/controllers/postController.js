@@ -10,18 +10,21 @@ import Category from '../models/Category.js';
 import CategoryPost from '../models/CategoryPost.js';
 import Like from '../models/Like.js';
 import { verifyToken } from '../functions/handleToken.js';
+import axios from 'axios';
 
 const postController = {
 	getAll: async (req, res) => {
-
-		const { _limit, _page, _user } = Object.entries(req.query).reduce((prev, curr) => ({...prev, [curr[0]]: +curr[1] }), {});
+		const { _limit, _page, _user } = Object.entries(req.query).reduce(
+			(prev, curr) => ({ ...prev, [curr[0]]: +curr[1] }),
+			{}
+		);
 
 		try {
 			// Pegar posts
 			const posts = await Post.scope(['user', 'likes', 'categories']).findAll({
 				limit: _limit || 4,
-				offset: ((_limit * _page) - _limit),
-        where: _user && { userId: _user }
+				offset: _limit * _page - _limit,
+				where: _user && { userId: _user }
 			});
 
 			const header = req.headers['authorization'];
@@ -73,9 +76,10 @@ const postController = {
 		}
 	},
 	create: async (req, res) => {
-		const { userId, title, content, categories } = req.body;
+		const { userId, title, content, categories, banner } = req.body;
 
 		try {
+
 			// Confirmando se o usuario existe
 			const user = await User.findByPk(userId);
 			if (!user) return sendResponse(res, 404, 'Usuário não encontrado.');
@@ -91,6 +95,11 @@ const postController = {
 			// Validando valores
 			validate({ titulo: title, isRequired: true });
 			validate({ conteudo: content, isRequired: true });
+			validate({ banner, isRequired: true });
+
+			const { headers } = await axios.get(banner);
+			const isImage = await headers['content-type'].includes('image');
+			if(!isImage) return sendResponse(res, 400, 'Insira uma um link de imagem válido.')
 
 			// Procurando e checando se as categorias existem
 			const categoriesExist = await Category.findAll({
@@ -112,7 +121,8 @@ const postController = {
 				userId,
 				title,
 				slug,
-				content
+				content,
+				banner
 			});
 
 			// Adicionando as categorias
